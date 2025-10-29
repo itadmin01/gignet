@@ -70,7 +70,7 @@ class GenerarPagosBanco(models.TransientModel):
             record = self.env[active_model].browse(active_id)
               ##################################################################################
               ###################################################################################
-              #encabezados 
+              # Encabezados 
               ###################################################################################
               ###################################################################################
             if self.banco_rfc == 'BSM970519DU8' or self.banco_rfc == 'BSM970519DU8_2': # Santander
@@ -150,7 +150,7 @@ class GenerarPagosBanco(models.TransientModel):
             for payslip in record.slip_ids.filtered(lambda x: x.state!='cancel'):
                     employee = payslip.employee_id
 
-                    if employee.tipo_pago=='transferencia' and employee.diario_pago.bank_id.bic == str(self.banco_rfc).replace('_2',''):
+                    if employee.tipo_pago=='transferencia' and employee.diario_pago.id == self.diario_pago.id:
                         net_total = sum(payslip.line_ids.filtered(lambda x:x.code=='EFECT').mapped('total'))
                         if net_total == 0:
                             continue
@@ -427,31 +427,63 @@ class GenerarPagosBanco(models.TransientModel):
                            file_text.append((data1)+(data2)+(data3)+(data4)+(data5)+(data6)+(data7)+(data8))
                            num_registro += 1
                         elif self.banco_rfc == 'HMI950125KG8': # HSBC
+                           if self.employee_type == '02':
+                               if not employee.no_cuenta:
+                                   raise UserError(_('Falta configurar número de cuenta %s.') % (employee.name))
+                               data1 = employee.no_cuenta.rjust(10, '0') + ','
+                               data2 =  str(round(net_total,2)).split('.')[0].rjust(12, '0')  + '.'
+                               if net_total > 0:
+                                  data3 =  str(round(net_total,2)).split('.')[1].ljust(2, '0') + ','
+                               else:
+                                  data3 =  '00' + ','
 
-                           if not employee.no_cuenta:
-                               raise UserError(_('Falta configurar número de cuenta %s.') % (employee.name))
-                           data1 = employee.no_cuenta.rjust(10, '0') + ','
-                           data2 =  str(round(net_total,2)).split('.')[0].rjust(12, '0')
-                           if net_total > 0:
-                              data3 =  str(round(net_total,2)).split('.')[1].ljust(2, '0') + ','
+                               data4 = 'ABONO POR PAGO DE NOMINA          ' + ','
+
+                               if not employee.empleado_nombre or not employee.empleado_paterno:
+                                   raise UserError(_('Falta nombre y/o apellido paterno para el empleado %s.') % (employee.name))
+                               if employee.empleado_materno:
+                                  nombre_empleado = employee.empleado_nombre + ' ' + employee.empleado_paterno + ' ' + employee.empleado_materno
+                               else:
+                                  nombre_empleado = employee.empleado_nombre + ' ' + employee.empleado_paterno
+                               nombre_empleado = nombre_empleado.replace('-','').replace('.','').replace(':','').replace('?','').replace('&','').replace('!','')
+                               nombre_empleado = nombre_empleado.replace('á','a').replace('é','e').replace('í','i').replace('ó','o').replace('ú','u')
+                               nombre_empleado = nombre_empleado.replace('Á','A').replace('É','E').replace('Í','I').replace('Ó','O').replace('Ú','U')
+                               nombre_empleado = nombre_empleado.replace('ñ','@').replace('Ñ','@')
+                               data5 = nombre_empleado[0:35].ljust(35, ' ')
+
+                               file_text.append((data1)+(data2)+(data3)+(data4)+(data5))
                            else:
-                              data3 =  '00' + ','
-
-                           data4 = 'ABONO POR PAGO DE NOMINA          ' + ','
-
-                           if not employee.empleado_nombre or not employee.empleado_paterno:
-                               raise UserError(_('Falta nombre y/o apellido paterno para el empleado %s.') % (employee.name))
-                           if employee.empleado_materno:
-                              nombre_empleado = employee.empleado_nombre + ' ' + employee.empleado_paterno + ' ' + employee.empleado_materno
-                           else:
-                              nombre_empleado = employee.empleado_nombre + ' ' + employee.empleado_paterno
-                           nombre_empleado = nombre_empleado.replace('-','').replace('.','').replace(':','').replace('?','').replace('&','').replace('!','')
-                           nombre_empleado = nombre_empleado.replace('á','a').replace('é','e').replace('í','i').replace('ó','o').replace('ú','u')
-                           nombre_empleado = nombre_empleado.replace('Á','A').replace('É','E').replace('Í','I').replace('Ó','O').replace('Ú','U')
-                           nombre_empleado = nombre_empleado.replace('ñ','@').replace('Ñ','@')
-                           data5 = nombre_empleado[0:35].ljust(35, ' ')
-
-                           file_text.append((data1)+(data2)+(data3)+(data4)+(data5))
+                               if employee.tipo_cuenta == 't_debido':
+                                   data1 = 'CLA' + ','
+                               elif employee.tipo_cuenta == 'c_ahorro':
+                                   data1 = 'TDD' + ','
+                               else:
+                                   raise UserError(_('Debe utilizar una tarjeta de débito o CLABE para el empleado %s.') % (employee.name))
+                               data2 = employee.banco.c_banco
+                               if not employee.no_cuenta:
+                                   raise UserError(_('Falta configurar número de cuenta %s.') % (employee.name))
+                               data3 = employee.no_cuenta.rjust(10, '0') + ','
+                               if not employee.empleado_nombre or not employee.empleado_paterno:
+                                   raise UserError(_('Falta nombre y/o apellido paterno para el empleado %s.') % (employee.name))
+                               if employee.empleado_materno:
+                                  nombre_empleado = employee.empleado_nombre + ' ' + employee.empleado_paterno + ' ' + employee.empleado_materno
+                               else:
+                                  nombre_empleado = employee.empleado_nombre + ' ' + employee.empleado_paterno
+                               nombre_empleado = nombre_empleado.replace('-','').replace('.','').replace(':','').replace('?','').replace('&','').replace('!','')
+                               nombre_empleado = nombre_empleado.replace('á','a').replace('é','e').replace('í','i').replace('ó','o').replace('ú','u')
+                               nombre_empleado = nombre_empleado.replace('Á','A').replace('É','E').replace('Í','I').replace('Ó','O').replace('Ú','U')
+                               nombre_empleado = nombre_empleado.replace('ñ','@').replace('Ñ','@')
+                               data4 = nombre_empleado[0:35].ljust(40, ' ') + ','
+                               data5 =  str(round(net_total,2)).split('.')[0].rjust(12, '0')  + '.'
+                               if net_total > 0:
+                                  data6 =  str(round(net_total,2)).split('.')[1].ljust(2, '0') + ','
+                               else:
+                                  data6 =  '00' + ','
+                               data7 = self.fecha_dispersion.strftime('%d%m%y') + ' ,' # Referencia numérica
+                               data8 = 'ABONO POR PAGO DE NOMINA                ' + ','
+                               data9 =  ',' # employee.rfc.rjust(18,' ')  opcional  en caso de requeir comprobante fiscal
+                               #data10 = ',' opcional  en caso de requeir comprobante fiscal
+                               file_text.append(data1 + data2 + data3 + data4 + data5 + data6 + data7 + data8 + data9)
                            num_registro += 1
                         elif self.banco_rfc == 'SIN9412025I4': # Scotiabank
                            if not employee.no_cuenta:
@@ -710,25 +742,35 @@ class GenerarPagosBanco(models.TransientModel):
                   enc24 = '00000000000000000000000000000000000000000000000000000000000000000000000000000' #filler 
                   str_encabezado.append(enc11+enc12+enc13+enc14+enc15+enc16+enc17+sum17a +enc18 + enc19+ enc20+ enc21+ enc22+ enc23+ enc24)
             elif self.banco_rfc == 'HMI950125KG8': # HSBC
-                  #primer encabezado
-                  enc11 = 'MXPRLF,' #FIJO
-                  enc12 = 'F,' #fijo
-                  if self.diario_pago.bank_account_id.acc_number:
-                     enc13 = self.diario_pago.bank_account_id.acc_number.rjust(10, '0') + ','
+                  if self.employee_type == '02':
+                      enc11 = 'MXPRLF' + ',' #FIJO
+                      enc12 = 'F' + ',' #fijo
+                      if self.diario_pago.bank_account_id.acc_number:
+                         enc13 = self.diario_pago.bank_account_id.acc_number.rjust(10, '0') + ','
+                      else:
+                         raise UserError(_('Falta configurar el número de cuenta bancaria en el diario de pago seleccionado.'))
 
-                  enc14 = str(round(monto_total,2)).split('.')[0].rjust(12, '0')
-                  if monto_total > 0:
-                     enc15 =  str(round(monto_total,2)).split('.')[1].ljust(2, '0')  + ','
+                      enc14 = str(round(monto_total,2)).split('.')[0].rjust(12, '0') + '.'
+                      if monto_total > 0:
+                         enc15 =  str(round(monto_total,2)).split('.')[1].ljust(2, '0')  + ','
+                      else:
+                         enc15 =  '00' + ','
+
+                      enc16 = str(num_empleados).rjust(7, '0') + ','
+                      enc17 = self.fecha_dispersion.strftime('%d%m%Y') + ','
+                      enc18 = ',' # horario de programacion
+                      enc19 = record.name
+                      str_encabezado.append(enc11+enc12+enc13+enc14+enc15+enc16+enc17+enc18 + enc19)
                   else:
-                     enc15 =  '00' + ','
-
-                  enc16 = str(num_empleados).rjust(7, '0') + ','
-                  enc17 = self.fecha_dispersion.strftime('%d%m%Y') + ','
-
-                  enc18 = ',' # horario de programacion
-                  enc19 = record.name
-
-                  str_encabezado.append(enc11+enc12+enc13+enc14+enc15+enc16+enc17+enc18 + enc19)
+                      if self.diario_pago.bank_account_id.acc_number:
+                         enc11 = self.diario_pago.bank_account_id.acc_number.rjust(10, '0') + ','
+                      else:
+                         raise UserError(_('Falta configurar el número de cuenta bancaria en el diario de pago seleccionado.'))
+                      enc12 = self.fecha_dispersion.strftime('%d%m%Y') + ','
+                      enc13 = record.company_id.vat.rjust(18, ' ') + ','
+                      enc14 =  'MXN' + ','
+                      enc15 = record.name
+                      str_encabezado.append(enc11+enc12+enc13+enc14+enc15)
             elif self.banco_rfc == 'SIN9412025I4': # Scotiabank
                   sum1 = 'EETB' #FIJO
                   sum2 = 'EETA' #Moneda nacional
@@ -795,11 +837,14 @@ class GenerarPagosBanco(models.TransientModel):
         if not file_text:
             raise UserError(_('No hay información para generar el archivo de dispersión'))
         file_text = str_encabezado + file_text + str_sumario
-        file_text = '\n'.join(file_text)
+        if self.banco_rfc == 'BAF950102JP5': # Afirme
+            file_text = '\r\n'.join(file_text)
+        else:
+            file_text = '\r\n'.join(file_text)
         file_text = file_text.encode()
         if self.banco_rfc == 'BMN930209927':
             filename = 'NI' + self.banorte_numero + '01.pag'
-        elif self.banco_rfc == 'BII931004P61':
+        elif self.banco_rfc == 'BII931004P61' or self.banco_rfc == 'HMI950125KG8':
             filename = datetime.now().strftime("%y%m-%d%H%M%S")+'.csv'
         else:
             filename = datetime.now().strftime("%y%m-%d%H%M%S")+'.txt'
