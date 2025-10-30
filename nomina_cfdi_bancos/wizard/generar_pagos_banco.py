@@ -392,8 +392,10 @@ class GenerarPagosBanco(models.TransientModel):
                               data6a =  str(round(net_total,2)).split('.')[1].ljust(2, '0')
                            else:
                               data6a =  '00'
+                           if not employee.banco:
+                                   raise UserError(_('Falta configurar el banco para el empleado %s.') % (employee.name))
                            if not employee.banco.c_banco:
-                               raise UserError(_('El banco seleccionado no tiene clave configurada %s.') % (employee.name))
+                               raise UserError(_('Falta configurar la clave en el banco para el empleado %s.') % (employee.name))
                            data7 = employee.banco.c_banco # numero del banco receptor
                            if employee.tipo_cuenta == 't_debito' or employee.tipo_cuenta == 't_credito':
                                data8 = '03'
@@ -459,6 +461,10 @@ class GenerarPagosBanco(models.TransientModel):
                                    data1 = 'TDD' + ','
                                else:
                                    raise UserError(_('Debe utilizar una tarjeta de débito o CLABE para el empleado %s.') % (employee.name))
+                               if not employee.banco:
+                                   raise UserError(_('Falta configurar el banco para el empleado %s.') % (employee.name))
+                               if not employee.banco.c_banco:
+                                   raise UserError(_('Falta configurar la clave en el banco para el empleado %s.') % (employee.name)) 
                                data2 = employee.banco.c_banco
                                if not employee.no_cuenta:
                                    raise UserError(_('Falta configurar número de cuenta %s.') % (employee.name))
@@ -479,6 +485,8 @@ class GenerarPagosBanco(models.TransientModel):
                                   data6 =  str(round(net_total,2)).split('.')[1].ljust(2, '0') + ','
                                else:
                                   data6 =  '00' + ','
+                               if not self.fecha_dispersion:
+                                   raise UserError(_('Falta colocar la fecha de dispersión.'))
                                data7 = self.fecha_dispersion.strftime('%d%m%y') + ' ,' # Referencia numérica
                                data8 = 'ABONO POR PAGO DE NOMINA                ' + ','
                                data9 =  ',' # employee.rfc.rjust(18,' ')  opcional  en caso de requeir comprobante fiscal
@@ -575,6 +583,10 @@ class GenerarPagosBanco(models.TransientModel):
                            data1 = '02' # Tipo de registro
                            data2 = (str(num_registro + 1)).rjust(7, '0') 
                            data3 = '60' # Código de operación 60 abono / 30 cargo
+                           if not employee.banco:
+                              raise UserError(_('Falta configurar el banco para el empleado %s.') % (employee.name))
+                           if not employee.banco.c_banco:
+                              raise UserError(_('Falta configurar la clave en el banco para el empleado %s.') % (employee.name)) 
                            data4 = employee.banco.c_banco # Banco receptor
                            data6 =  str(round(net_total,2)).split('.')[0].rjust(13, '0')
                            if net_total > 0:
