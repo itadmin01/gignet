@@ -142,11 +142,11 @@ class HrPayslip(models.Model):
     )
     uuid_relacionado = fields.Char('CFDI Relacionado')
     methodo_pago = fields.Selection(
-        selection=[('PUE', _('Pago en una sola exhibición')),],
+        selection=[('PUE', 'Pago en una sola exhibición'),],
         string='Método de pago', default='PUE',
     )	
     uso_cfdi = fields.Selection(
-        selection=[('P01', _('Por definir')),('CN01', _('Nomina')),],
+        selection=[('P01', 'Por definir'),('CN01', 'Nomina'),],
         string='Uso CFDI (cliente)',default='CN01',
     )
     fecha_pago = fields.Date('Fecha de pago')
@@ -369,16 +369,20 @@ class HrPayslip(models.Model):
                     'number_of_hours': hours,
                     'contract_id': contract.id,
                 }
-                _logger.info('horas %s ---- dias %s', hours, day_rounded)
-                number_hours = hours
+                #_logger.info('horas %s ---- dias %s', hours, day_rounded)
+                #number_hours = hours
                 #_logger.info('dias trabajados %s -- %s', work_entry_type.name, day_rounded)
 
                 #sacar calculos
                 if work_entry_type:
                         if work_entry_type.code == 'FJS' or work_entry_type.code == 'FI' or work_entry_type.code == 'FR':
                             falta_days += day_rounded
-                            attendance_line['number_of_days'] = (hours / hours_per_day) * factor
-                            attendance_line['number_of_hours'] = (hours / hours_per_day) * factor
+                            if contract.faltas_proporcionales:
+                                attendance_line['number_of_days'] = (hours / hours_per_day) * factor
+                                attendance_line['number_of_hours'] = hours * factor
+                            else:
+                                attendance_line['number_of_days'] = (hours / hours_per_day)
+                                attendance_line['number_of_hours'] = hours
                             leave_days += day_rounded * factor
                             if leave_days > dias_pagar:
                                 leave_days = dias_pagar
@@ -387,7 +391,15 @@ class HrPayslip(models.Model):
                                 attendance_line['number_of_hours'] = dias_pagar * hours_per_day if hours_per_day else 0
                         elif work_entry_type.code == 'INC_EG' or work_entry_type.code == 'INC_RT' or work_entry_type.code == 'INC_MAT':
                             inc_days += day_rounded
-                            leave_days += day_rounded
+                            if contract.incapa_sept_dia:
+                                leave_days += day_rounded * factor
+                                if leave_days > dias_pagar:
+                                    leave_days = dias_pagar
+                            else:
+                                leave_days += day_rounded
+                            if attendance_line['number_of_days'] > dias_pagar:
+                                attendance_line['number_of_days'] = dias_pagar
+                                attendance_line['number_of_hours'] = dias_pagar * hours_per_day if hours_per_day else 0
                         elif work_entry_type.code == 'VAC' or work_entry_type.code == 'FJC':
                             vac_days += day_rounded
                             leave_days += day_rounded
@@ -501,6 +513,8 @@ class HrPayslip(models.Model):
                             number_of_days = work_data['days']
                       elif nvo_ingreso:
                          number_of_days = work_data['days'] - leave_days
+                         if contract.sept_dia:
+                            number_of_days += 1
                       else:
                          if contract.work_entry_source != 'attendance':
                             number_of_days = 7 - leave_days
@@ -542,7 +556,7 @@ class HrPayslip(models.Model):
                                else:
                                   aux = 1
                       attendances = {
-                          'name': _("Séptimo día"),
+                          'name': "Séptimo día",
                           'sequence': 3,
                           'code': "SEPT",
                           'number_of_days': aux, 
@@ -606,7 +620,7 @@ class HrPayslip(models.Model):
                else:
                   number_of_days = work_data['days']
             attendances = {
-                'name': _("Días de trabajo"),
+                'name': "Días de trabajo",
                 'sequence': 1,
                 'code': 'WORK100',
                 'number_of_days': number_of_days,
@@ -635,7 +649,7 @@ class HrPayslip(models.Model):
 
                    if number_of_hours <= max_hours:
                       attendances = {
-                            'name': _("Horas extras"),
+                            'name': "Horas extras",
                             'sequence': 2,
                             'code': 'HEX2',
                             'number_of_days': int(math.ceil(number_of_hours/3)), 
@@ -644,7 +658,7 @@ class HrPayslip(models.Model):
                          }
                    else:
                       attendances2 = {
-                            'name': _("Horas extras"),
+                            'name': "Horas extras",
                             'sequence': 2,
                             'code': 'HEX2',
                             'number_of_days': 6, 
@@ -653,7 +667,7 @@ class HrPayslip(models.Model):
                       }
                       res.append(attendances2)
                       attendances = {
-                            'name': _("Horas extras"),
+                            'name': "Horas extras",
                             'sequence': 2,
                             'code': 'HEX3',
                             'number_of_days': int(math.ceil((number_of_hours - max_hours)/3)),
@@ -662,7 +676,7 @@ class HrPayslip(models.Model):
                       }
                 else:
                    attendances = {
-                       'name': _("Horas extras"),
+                       'name': "Horas extras",
                        'sequence': 2,
                        'code': work_code,
                        'number_of_days': number_of_days, 
@@ -1405,7 +1419,7 @@ class HrPayslip(models.Model):
                             'TipoJornada': self.employee_id.jornada,
                             'Antiguedad': 'P' + str(antiguedad) + 'W',
                             'Banco': banco,
-                            'CuentaBancaria': self.employee_id.no_cuenta,
+                            'CuentaBancaria': self.employee_id.no_cuenta if banco else '',
                             'FechaInicioRelLaboral': self.contract_id.date_start and self.contract_id.date_start.strftime(DF),
                             'NumSeguridadSocial': self.employee_id.segurosocial,
                             'Puesto': self.employee_id.job_id.name,
@@ -1868,9 +1882,10 @@ class HrPayslip(models.Model):
                 for complementos in Complemento:
                       nominas = complementos.find('nomina12:Nomina', NSMAP)
                       nomina = nominas.find('nomina12:Receptor', NSMAP)
-                      salario_amount = nomina.attrib['SalarioDiarioIntegrado']
-                      if not salario_amount:
-                            return round(payslip.contract_id.sueldo_diario_integrado,2)
+                      if 'SalarioDiarioIntegrado' in nomina:
+                          salario_amount = nomina.attrib['SalarioDiarioIntegrado']
+                      else:
+                          salario_amount = round(payslip.contract_id.sueldo_diario_integrado,2)
             return salario_amount
 
 class HrPayslipMail(models.Model):

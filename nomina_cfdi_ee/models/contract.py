@@ -84,7 +84,7 @@ class Contract(models.Model):
         string='Prima vacacional',
         default = '02'
     )
-    septimo_dia = fields.Boolean(string='Falta proporcional 7mo día')
+    septimo_dia = fields.Boolean(string='Descontar faltas en 7mo día')
     incapa_sept_dia = fields.Boolean(string='Incluir incapacidad en 7mo día')
     sept_dia = fields.Boolean(string='Séptimo día separado')
     semana_inglesa = fields.Boolean(string='Semana inglesa')
@@ -95,7 +95,8 @@ class Contract(models.Model):
         ('monthly', 'Sueldo fijo'),
         ('hourly', 'Sueldo por hora')
     ], default='monthly')
-    vacaciones_adelantadas = fields.Integer('Dias vacaciones adelantadas', default=0) 
+    vacaciones_adelantadas = fields.Integer('Dias vacaciones adelantadas', default=0)
+    faltas_proporcionales = fields.Boolean(string='Mostrar faltas proporcionales')
 
     @api.onchange('wage')
     def _compute_sueldo(self):

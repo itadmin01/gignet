@@ -211,13 +211,15 @@
                        <div>
                           <strong>Periodicidad de pago</strong>: <span t-field="o.periodicidad" />
                        </div>
-                       <div>
-                          <strong>Seguro social</strong>: <span t-field="o.employee_id.segurosocial" />
-                       </div>
-                       <div>
-                          <t t-set="sueldo_integrado" t-value="o.read_xml_report_values()"/>
-                          <strong>Salario integrado</strong>: <span t-esc="sueldo_integrado" /> diario
-                       </div>
+                       <t t-if="o.employee_id.contrato not in ['09', '10', '99']">
+                          <div>
+                              <strong>Seguro social</strong>: <span t-field="o.employee_id.segurosocial" />
+                          </div>
+                          <div>
+                             <t t-set="sueldo_integrado" t-value="o.read_xml_report_values()"/>
+                             <strong>Salario integrado</strong>: <span t-esc="sueldo_integrado" /> diario
+                          </div>
+                       </t>
                        <div>
                           <strong>Jornada</strong>: <span t-field="o.employee_id.jornada" />
                        </div>

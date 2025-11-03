@@ -9,18 +9,18 @@ from odoo.exceptions import UserError
 
 class Employee(models.Model):
     _inherit = "hr.employee"
-    
-    no_empleado = fields.Char(_('Número de empleado'))
+
+    no_empleado = fields.Char('Número de empleado')
     tipo_pago = fields.Selection(selection=[('transferencia', 'Transferencia'),('efectivo', 'Efectivo'),
                                          ('cheque', 'Cheque')],
         string='Tipo de Pago',
     )
     banco = fields.Many2one('res.bank','Banco empleado')
-    no_cuenta = fields.Char(_('No. cuenta empleado'))
-    rfc = fields.Char(_('RFC'))
-    curp = fields.Char(_('CURP'))
-    segurosocial = fields.Char(_('Seguro social'))
-    correo_electronico = fields.Char(_('Correo electrónico'))	
+    no_cuenta = fields.Char('No. cuenta empleado')
+    rfc = fields.Char('RFC')
+    curp = fields.Char('CURP')
+    segurosocial = fields.Char('Seguro social')
+    correo_electronico = fields.Char('Correo electrónico')
     tipo_cuenta = fields.Selection(selection=[('t_debido', 'Tarjeta de débito'),('cheques', 'Cheques'),
                                          ('c_ahorro', 'Cuenta de ahorro'),('t_credito', 'Tarjeta de crédito')],
         string='Tipo de cuenta',
@@ -73,11 +73,6 @@ class Employee(models.Model):
         string='Jornada',
     )
     estado = fields.Many2one('res.country.state','Lugar donde labora (estado)')
-    #fondo_ahorro  = fields.Float('Fondo de ahorro'), readonly=True)
-    #dias_utilidad =  fields.Float('Dias para cálculo de Utilidad'))
-    #sueldo_utilidad =  fields.Float('Sueldo para cálculo de Utilidad'))
-    #fecha_utilidad_inicio = fields.Date(readonly=True)
-    #fecha_utilidad_fin = fields.Date(readonly=True)
 
     empleado_nombre = fields.Char("Nombre")
     empleado_paterno = fields.Char("Apellido Paterno")
@@ -85,13 +80,6 @@ class Employee(models.Model):
     sindicalizado = fields.Boolean('Sindicalizado', default=False)
     domicilio_receptor = fields.Char("Código postal (SAT)")
     company_cfdi = fields.Boolean(related="company_id.company_cfdi",store=True)
-
-#    @api.multi
-#    @api.onchange('registro_patronal')
-#    def _check_registro_length(self):
-#        if self.registro_patronal:
-#            if len(self.registro_patronal) != 11:
-#                raise UserError(_('La longitud del registro patronal es incorrecto'))
 
     @api.onchange('segurosocial')
     def _check_nss_length(self):

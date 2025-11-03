@@ -170,6 +170,7 @@ class TablasCFDI(models.Model):
     isn =  fields.Float('Impuesto sobre nómina', default='2.0', digits = (12,2))
     pct_uma = fields.Float('% Valor mensual UMA', default='11.82', digits = (12,2))
     limit_sm = fields.Float('Límite salario mensual', default='9081', digits = (12,2))
+    company_id = fields.Many2one('res.company', 'Company', required=True, index=True, default=lambda self: self.env.company)
 
     @api.constrains('name')
     def _check_name(self):

@@ -25,4 +25,11 @@
         <field name="category_id" ref="nomina_cfdi_ee.module_nomina_ee"/>
     </record>
 
+    <record model="ir.rule" id="tablas_rule">
+        <field name="name">Tabla CFDI multi-company</field>
+        <field name="model_id" ref="model_tablas_cfdi"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+    </record>
+
 </odoo>

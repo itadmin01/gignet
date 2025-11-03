@@ -6,17 +6,17 @@ from odoo.exceptions import UserError
 class HrEmployeePublic(models.Model):
     _inherit = "hr.employee.public"
     
-    no_empleado = fields.Char(_('Número de empleado'))
+    no_empleado = fields.Char('Número de empleado')
     tipo_pago = fields.Selection(selection=[('transferencia', 'Transferencia'),('efectivo', 'Efectivo'),
                                          ('cheque', 'Cheque')],
         string='Tipo de Pago',
     )
     banco = fields.Many2one('res.bank','Banco empleado')
-    no_cuenta = fields.Char(_('No. cuenta empleado'))
-    rfc = fields.Char(_('RFC'))
-    curp = fields.Char(_('CURP'))
-    segurosocial = fields.Char(_('Seguro social'))
-    correo_electronico = fields.Char(_('Correo electrónico'))	
+    no_cuenta = fields.Char('No. cuenta empleado')
+    rfc = fields.Char('RFC')
+    curp = fields.Char('CURP')
+    segurosocial = fields.Char('Seguro social')
+    correo_electronico = fields.Char('Correo electrónico')
     tipo_cuenta = fields.Selection(selection=[('t_debido', 'Tarjeta de débito'),('cheques', 'Cheques'),
                                          ('c_ahorro', 'Cuenta de ahorro'),('t_credito', 'Tarjeta de crédito')],
         string='Tipo de cuenta',

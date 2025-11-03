@@ -27,6 +27,7 @@
                     <field name="sept_dia" invisible="periodicidad_pago != '02'"/>
                     <field name="septimo_dia" invisible="sept_dia == False"/>
                     <field name="incapa_sept_dia" invisible="sept_dia == False"/>
+                    <field name="faltas_proporcionales" invisible="sept_dia == False"/>
                     <field name="semana_inglesa" invisible="periodicidad_pago != '02'"/>
                     <field name="prima_dominical" />
                     <field name="calc_isr_extra" />
