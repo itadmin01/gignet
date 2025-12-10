@@ -430,14 +430,14 @@ class HrPayslip(models.Model):
             if date_start_1 > d_from_1:
                 if contract.work_entry_source != 'attendance':
                     if contract.periodicidad_pago == '04' and contract.tipo_pago != '02':
-                        if d_to_1.day == 30:
-                            work_data['days'] =  (d_to_1 - date_start_1).days + 1
-                        elif d_to_1.day == 31:
+                        if d_to_1.day == 31:
                             work_data['days'] =  (d_to_1 - date_start_1).days
                         elif d_to_1.day == 29:
                             work_data['days'] =  (d_to_1 - date_start_1).days + 2
-                        else:
+                        elif d_to_1.day == 28:
                             work_data['days'] =  (d_to_1 - date_start_1).days + 3
+                        else:
+                            work_data['days'] =  (d_to_1 - date_start_1).days + 1
                     else:
                         work_data['days'] =  (d_to_1 - date_start_1).days + 1
                 nvo_ingreso = True
@@ -450,7 +450,7 @@ class HrPayslip(models.Model):
             #dias_a_pagar = contract.dias_pagar
             #_logger.info('dias trabajados2 %s  dias incidencia %s', work_data['days'], leave_days)
 
-            if work_data['days'] < 100:
+            if work_data['days'] < 33:
             #periodo para nómina quincenal
                if contract.periodicidad_pago == '04':
                    if contract.tipo_pago == '01' and nb_of_days < 17:
@@ -1305,10 +1305,10 @@ class HrPayslip(models.Model):
 
         if self.employee_id.tipo_pago == 'transferencia':
             if not self.employee_id.no_cuenta:
-               raise UserError(_('Falta agregar número de cuenta'))
+               raise UserError(_('Falta agregar número de cuenta debe tener una longitud de 10, 11, 16 ó 18 posiciones'))
             if len(self.employee_id.no_cuenta) != 18:
                if not self.employee_id.banco:
-                  raise UserError(_('Falta agregar banco'))
+                  raise UserError(_('Falta agregar el banco en el empleado'))
                banco = self.employee_id.banco.c_banco
             else:
                banco = None
@@ -1419,7 +1419,7 @@ class HrPayslip(models.Model):
                             'TipoJornada': self.employee_id.jornada,
                             'Antiguedad': 'P' + str(antiguedad) + 'W',
                             'Banco': banco,
-                            'CuentaBancaria': self.employee_id.no_cuenta if banco else '',
+                            'CuentaBancaria': self.employee_id.no_cuenta.rjust(10, '0'),
                             'FechaInicioRelLaboral': self.contract_id.date_start and self.contract_id.date_start.strftime(DF),
                             'NumSeguridadSocial': self.employee_id.segurosocial,
                             'Puesto': self.employee_id.job_id.name,
